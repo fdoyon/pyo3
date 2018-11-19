@@ -33,6 +33,12 @@ impl PyObject {
         PyObject(ptr)
     }
 
+    pub(crate) unsafe fn into_nonnull(self) -> NonNull<ffi::PyObject> {
+        let res = self.0;
+        std::mem::forget(self); // Avoid Drop
+        res
+    }
+
     /// Creates a `PyObject` instance for the given FFI pointer.
     /// This moves ownership over the pointer into the `PyObject`.
     /// Undefined behavior if the pointer is NULL or invalid.
@@ -176,7 +182,7 @@ impl PyObject {
 
     /// Calls the object.
     /// This is equivalent to the Python expression: 'self(*args, **kwargs)'
-    pub fn call<A>(&self, py: Python, args: A, kwargs: Option<PyDict>) -> PyResult<PyObject>
+    pub fn call<A>(&self, py: Python, args: A, kwargs: Option<&PyDict>) -> PyResult<PyObject>
     where
         A: IntoPyTuple,
     {

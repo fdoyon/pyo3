@@ -85,7 +85,7 @@ pub const PY_TYPE_FLAG_DICT: usize = 1 << 3;
 /// impl MyClass {
 ///    #[new]
 ///    fn __new__(obj: &PyRawObject) -> PyResult<()> {
-///        obj.init(||   MyClass { })
+///        obj.init(|| MyClass { })
 ///    }
 /// }
 /// ```
@@ -149,6 +149,7 @@ impl PyRawObject {
         let value = f();
 
         unsafe {
+            // The `as *mut u8` part is required because the offset is in bytes
             let ptr = (self.ptr as *mut u8).offset(T::OFFSET) as *mut T;
             std::ptr::write(ptr, value);
         }
@@ -490,7 +491,7 @@ fn py_class_flags<T: PyTypeInfo>(type_object: &mut ffi::PyTypeObject) {
         type_object.tp_flags = ffi::Py_TPFLAGS_DEFAULT | ffi::Py_TPFLAGS_CHECKTYPES;
     }
     if !type_object.tp_as_buffer.is_null() {
-        type_object.tp_flags = type_object.tp_flags | ffi::Py_TPFLAGS_HAVE_NEWBUFFER;
+        type_object.tp_flags |= ffi::Py_TPFLAGS_HAVE_NEWBUFFER;
     }
     if T::FLAGS & PY_TYPE_FLAG_BASETYPE != 0 {
         type_object.tp_flags |= ffi::Py_TPFLAGS_BASETYPE;
